@@ -87,8 +87,6 @@ def main():
                                          transforms.CenterCrop(224),
                                          transforms.ToTensor()])
 
-    # transform = transforms.ToTensor()
-
     data_path = "/home/duy/Documents/Pytorch_study/VGG16-PyTorch/resized"
     trainData = datasets.ImageFolder(root=data_path, transform=trainTransforms)
     testData = datasets.ImageFolder(root=data_path, transform=testTransforms)
@@ -133,7 +131,8 @@ def main():
             optimizer.step()
 
             if batchNumber % 10 == 0:
-                print(f'epoch: {i:2}  batch: {batchNumber:4} [{100 * batchNumber:6}/60000]  loss: {loss.item():10.8f} accuracy: {trainCorrect.item() * 100 / (100 * batchNumber):7.3f}%')
+                print(f'epoch: {i:2} batch: {batchNumber:4} [{100 * batchNumber:6}/60000]  loss: {loss.item():10.8f} '
+                      f'accuracy: {trainCorrect.item() * 100 / (100 * batchNumber):7.3f}%')
         # Update train loss & accuracy for the epoch
         trainLosses.append(loss)
         trainCorrects.append(trainCorrect)
@@ -141,7 +140,7 @@ def main():
         with torch.no_grad():
             for b, (imageTest, labelTest) in enumerate(testLoader):
                 # Apply the model
-                yValue = model(imageTest.view(500, -1))  # Here we flatten imageTest
+                yValue = model(imageTest)
 
                 predicted = torch.max(yValue.data, 1)[1]
                 testCorrect += (predicted == labelTest).sum()
@@ -150,7 +149,7 @@ def main():
         testCorrects.append(testCorrect)
         print(f'Test accuracy: {testCorrect.item()}/{len(testData)} = {testCorrect.item() * 100 / (len(testData)):7.3f}%')
     total_time = time.time() - start_time
-    print(f'Duratiopn: {total_time / 60} mins')
+    print(f'Duration: {total_time / 60} mins')
 
 
 main()
