@@ -6,17 +6,12 @@ from torchvision import datasets, transforms, models
 import multiprocessing
 import torch.utils.model_zoo as model_zoo
 
-# import vgg
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 max_workers = multiprocessing.cpu_count() - 2 if multiprocessing.cpu_count() > 2 else 1
 data_path = "/home/duy/Documents/Pytorch_study/VGG16-PyTorch/resized"
 
 cfg = {
-    'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
-    'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+    'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
 }
 
 
@@ -77,23 +72,12 @@ def make_layers(cfg, batch_norm=False):
 
 
 model_urls = {
-    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
-    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
     'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
-    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
-    'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
-    'vgg13_bn': 'https://download.pytorch.org/models/vgg13_bn-abd245e5.pth',
-    'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
-    'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
 }
 
 
+# Create VGG_16 network
 def vgg16(pretrained=False, **kwargs):
-    """VGG 16-layer model (configuration "D")
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['D']), **kwargs)
@@ -126,7 +110,8 @@ def train_model(model, criterion, optimizer, epochs):
     train_data = datasets.ImageFolder(root=data_path, transform=train_transforms)
     test_data = datasets.ImageFolder(root=data_path, transform=test_transforms)
 
-    train_loader = DataLoader(train_data, batch_size=32, shuffle=True, num_workers=workers)
+    train_batch_size = 32
+    train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True, num_workers=workers)
     test_loader = DataLoader(test_data, batch_size=64, shuffle=False, num_workers=workers)
 
     print('-----------------STARTING-----------------')
@@ -150,21 +135,12 @@ def train_model(model, criterion, optimizer, epochs):
         for batch_number, (image_train, label_train) in enumerate(train_loader):
             batch_number += 1
 
-            # print (image_train.shape)
-
             image_train = image_train.to(device)
             label_train = label_train.to(device)
             label_predicted = model(image_train)
             loss = criterion(label_predicted, label_train)
 
-            # print (label_predicted.data.shape)
-
             predicted = torch.max(label_predicted.data, 1)[1]
-
-            # print ("label")
-            # print (label_train)
-            # print ("predicted")
-            # print (predicted)
 
             batch_correct = (predicted == label_train).sum()
 
@@ -175,7 +151,7 @@ def train_model(model, criterion, optimizer, epochs):
             loss.backward()
             optimizer.step()
 
-            log_for_train = f'epoch: {i + 1}| batch_number: {batch_number}| loss: {loss.item():10.8f}| accuracy: {train_correct.item() * 100 / (100 * batch_number):7.3f}%'
+            log_for_train = f'epoch: {i + 1}| batch_number: {batch_number}| loss: {loss.item():10.8f}| accuracy: {train_correct.item() * 100 / (train_batch_size * batch_number):7.3f}%'
 
             if batch_number % 50 == 0:
                 print(log_for_train)
